@@ -66,13 +66,14 @@ def build_deb(version, src_archive_name, downloaded_modules,
     return [ os.path.join(config.SRC_PATH, package_name) ]
 
 
-def build_rpm(version, downloaded_modules, revision, configure_params, patches):
+def build_rpm(version, downloaded_modules, revision, configure_params, patches, new_name):
     """
     Сборка rpm пакета
     :param version:
     :param downloaded_modules:
     :param revision:
     :param configure_params:
+    :param new_name
     :return:
     """
     logger.info("Building .rpm package")
@@ -85,7 +86,7 @@ def build_rpm(version, downloaded_modules, revision, configure_params, patches):
 
     spec_file = "nginx.spec"
 
-    if not patches is None:
+    if not patches is None or not new_name is None:
         # Patch spec file
         spec_path = os.path.join(specs_dir, spec_file)
         spec_path_patched = os.path.join(specs_dir, "nginx_patched.spec")
@@ -99,6 +100,14 @@ def build_rpm(version, downloaded_modules, revision, configure_params, patches):
 
             with open(spec_path) as infile:
                 for line in infile:
+                    if not new_name is None:
+                        if line.startswith("Name:"):
+                            line = "Name: {}\n".format(new_name)
+                        elif line == "%autosetup -p1\n":
+                            line = "%autosetup -p1 -n nginx-%{version}\n"
+                        else:
+                            line = line.replace("%{name}", "nginx")
+
                     outfile.write(line)
 
         # replace spec file with patched version
@@ -113,9 +122,11 @@ def build_rpm(version, downloaded_modules, revision, configure_params, patches):
     package_name = None
     package_debuginfo_name = None
     for file in os.listdir(os.path.join(rpms_dir, config.PLATFORM_ARCH)):
-        if file.startswith("nginx-{}".format(version)) and file.endswith(".rpm"):
+        if new_name is None:
+            new_name = "nginx"
+        if file.startswith("{}-{}".format(new_name, version)) and file.endswith(".rpm"):
             package_name = file
-        elif file.startswith("nginx-debuginfo-{}".format(version)) and file.endswith(".rpm"):
+        elif file.startswith("{}-debuginfo-{}".format(new_name, version)) and file.endswith(".rpm"):
             package_debuginfo_name = file
     return [ os.path.join(rpms_dir, config.PLATFORM_ARCH, package_name), os.path.join(rpms_dir, config.PLATFORM_ARCH, package_debuginfo_name) ]
 

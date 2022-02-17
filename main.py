@@ -62,6 +62,7 @@ def build_rpm(config, revision):
     Сборка rpm пакета
     :param config:
     :param revision:
+    :param new_name
     :return:
     """
     downloader.download_package_scripts_rpm()
@@ -74,7 +75,8 @@ def build_rpm(config, revision):
         downloaded_modules,
         revision,
         config['configure_params'],
-        patches
+        patches,
+        config.get("package_name")
     )
 
     return package_name
