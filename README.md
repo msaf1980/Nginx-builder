@@ -38,6 +38,7 @@ The main configuration file is in yaml format. Description of parameters:
 ```yaml
 ---
 nginx_version: the necessary version of nginx
+nginx_revision: package revision (by default - 1)
 output_package: type of output package deb or rpm
 modules:
   - module:
@@ -74,6 +75,7 @@ modules:
       git_tag: название тэга. (Не обязательно)
       git_branch: название ветки. (Не обязательно). Если не указан ни tag, ни branch по умолчанию берется master ветка
       patch: Относительный путь к патчу для исходного кода. (Не обязательно).
+      sub_dir: Relative path to directory used for module. (Optional)
       dependencies: 
         - список зависимостей для сборки модуля (Не обязательно)
     module:
