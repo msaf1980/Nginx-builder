@@ -23,6 +23,7 @@ def execute_command(command, path):
     process = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         cwd=path,
         shell=True,
         env=my_env,
@@ -30,11 +31,9 @@ def execute_command(command, path):
     )
     out, err = process.communicate()
 
-    logger.info(out)
-    if err:
-        print("STDERR CONTENT:", file=sys.stderr)
-        print(err, file=sys.stderr)
-        sys.exit(1)
+    print(out)
+    print("STDERR CONTENT:", file=sys.stderr)
+    print(err, file=sys.stderr)
 
     return out, process.returncode
 
