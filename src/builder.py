@@ -117,7 +117,7 @@ def build_rpm(version, downloaded_modules, revision, configure_params, name, pat
     shutil.move(modules_dir, scripts_dir)
     modules_dir = os.path.join(scripts_dir, "modules")
 
-    prepare_rules_rpm(specs_dir, downloaded_modules, modules_dir, revision, configure_params)
+    prepare_rules_rpm(specs_dir, spec_file, downloaded_modules, modules_dir, revision, configure_params)
     common_utils.execute_command("rpmbuild -bb {}".format(spec_file), specs_dir)
     package_name = None
     package_debuginfo_name = None
@@ -178,7 +178,7 @@ def prepare_rules(source_dir, downloaded_modules, configure_params):
                 output_file.write(config.MODULESDIR)
 
 
-def prepare_rules_rpm(source_dir, downloaded_modules, modules_dir, revision, configure_params):
+def prepare_rules_rpm(source_dir, spec_file, downloaded_modules, modules_dir, revision, configure_params):
     """
     Внесение правил сборки в spec файл
     :param source_dir:
@@ -195,9 +195,9 @@ def prepare_rules_rpm(source_dir, downloaded_modules, modules_dir, revision, con
         configure_command.append("--add-module={}/{}".format(modules_dir, module))
     configure_command = " ".join(configure_command)
 
-    with open('{}/nginx.spec'.format(source_dir), 'r') as input_file:
+    with open('{}/{}'.format(source_dir, spec_file), 'r') as input_file:
         content_file = input_file.readlines()
-    with open('{}/nginx.spec'.format(source_dir), 'w') as output_file:
+    with open('{}/{}'.format(source_dir, spec_file), 'w') as output_file:
         for line in content_file:
             if "./configure" in line:
                 line = configure_command
