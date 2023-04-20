@@ -32,8 +32,9 @@ def execute_command(command, path):
     out, err = process.communicate()
 
     print(out)
-    print("STDERR CONTENT:", file=sys.stderr)
-    print(err, file=sys.stderr)
+    if err:
+        print("STDERR CONTENT:", file=sys.stderr)
+        print(err, file=sys.stderr)
 
     return out, process.returncode
 
