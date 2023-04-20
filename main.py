@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import traceback
 from src import config_parser
 from src import downloader
 from src import builder
@@ -64,6 +65,7 @@ def build_rpm(config, revision):
     :param revision:
     :return:
     """
+    name = config["package_name"]
     downloader.download_package_scripts_rpm()
     downloader.download_source_rpm(config["nginx_version"])
     downloaded_modules = downloader.download_modules(config["modules"])
@@ -74,7 +76,7 @@ def build_rpm(config, revision):
         downloaded_modules,
         revision,
         config['configure_params'],
-        patches
+        name, patches
     )
 
     return package_name
@@ -101,6 +103,7 @@ def main():
             args.func(args)
         except Exception as e:
             logger.error(str(e))
+            logger.error(traceback.format_exc())
             sys.exit(1)
     else:
         logger.error('error: no arguments passed: use -h to help')
