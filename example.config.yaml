@@ -1,4 +1,5 @@
 nginx_version: 1.16.1
+nginx_revision: 2
 output_package: rpm
 modules:
   - module:

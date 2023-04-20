@@ -105,6 +105,8 @@ def build_rpm(version, downloaded_modules, revision, configure_params, name, pat
                         outfile.write("%autosetup -p1 -n nginx-%{version}\n")
                     # elif line == "BuildRoot: %{_tmppath}/%{name}-%{base_version}-%{base_release}-root\n":
                     #     outfile.write("BuildRoot: %{_tmppath}/nginx-%{base_version}-%{base_release}-root")
+                    elif line == "%define base_release 1%{?dist}.ngx\n":
+                        outfile.write("%define base_release " + str(revision) + "%{?dist}.ngx\n")
                     elif line == "%define bdir %{_builddir}/%{name}-%{base_version}\n":
                         outfile.write("%define bdir %{_builddir}/nginx-%{base_version}\n")
                     elif line.find("doc/%{name}-"):
