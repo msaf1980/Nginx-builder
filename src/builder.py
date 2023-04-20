@@ -66,7 +66,7 @@ def build_deb(version, src_archive_name, downloaded_modules,
     return [ os.path.join(config.SRC_PATH, package_name) ]
 
 
-def build_rpm(version, downloaded_modules, revision, configure_params, patches):
+def build_rpm(version, downloaded_modules, revision, configure_params, name, patches):
     """
     Сборка rpm пакета
     :param version:
@@ -82,21 +82,37 @@ def build_rpm(version, downloaded_modules, revision, configure_params, patches):
     scripts_dir = os.path.join(top_dir, "SOURCES")
     specs_dir = os.path.join(top_dir, "SPECS")
     rpms_dir = os.path.join(top_dir, "RPMS")
-
+    
     spec_file = "nginx.spec"
     spec_file_orig = "nginx.spec"
 
-    if not patches is None:
+    if not patches is None or name != "nginx":
         spec_file = "nginx_patched.spec"
         with open(os.path.join(specs_dir, spec_file), 'w') as outfile:
-            i = 0
-            for patch in patches:
-                patch_file = patch.replace("/", "_")
-                shutil.move(os.path.join(modules_dir, patch), os.path.join(scripts_dir, patch_file))
-                outfile.write("Patch{}: {}\n".format(i, patch_file))
+            if not patches is None:
+                i = 0
+                for patch in patches:
+                    patch_file = patch.replace("/", "_")
+                    shutil.move(os.path.join(modules_dir, patch), os.path.join(scripts_dir, patch_file))
+                    outfile.write("Patch{}: {}\n".format(i, patch_file))
             with open(os.path.join(specs_dir, spec_file_orig)) as infile:
                 for line in infile:
-                    outfile.write(line)
+                    if line == "Name: nginx\n":
+                        outfile.write("Name: {}\n".format(name))
+                    elif line.startswith("Source0: https://nginx.org/download/%{name}-%{version}."):
+                        outfile.write(line.replace('%{name}', 'nginx'))
+                    elif line == "%autosetup -p1\n":
+                        outfile.write("%autosetup -p1 -n nginx-%{version}\n")
+                    # elif line == "BuildRoot: %{_tmppath}/%{name}-%{base_version}-%{base_release}-root\n":
+                    #     outfile.write("BuildRoot: %{_tmppath}/nginx-%{base_version}-%{base_release}-root")
+                    elif line == "%define base_release 1%{?dist}.ngx\n":
+                        outfile.write("%define base_release " + str(revision) + "%{?dist}.ngx\n")
+                    elif line == "%define bdir %{_builddir}/%{name}-%{base_version}\n":
+                        outfile.write("%define bdir %{_builddir}/nginx-%{base_version}\n")
+                    elif line.find("doc/%{name}-"):
+                        outfile.write(line.replace('%{name}', '%{name}'))
+                    else:
+                        outfile.write(line)
 
     shutil.move(modules_dir, scripts_dir)
     modules_dir = os.path.join(scripts_dir, "modules")
@@ -105,11 +121,14 @@ def build_rpm(version, downloaded_modules, revision, configure_params, patches):
     common_utils.execute_command("rpmbuild -bb {}".format(spec_file), specs_dir)
     package_name = None
     package_debuginfo_name = None
+    print(rpms_dir)
     for file in os.listdir(os.path.join(rpms_dir, config.PLATFORM_ARCH)):
-        if file.startswith("nginx-{}".format(version)) and file.endswith(".rpm"):
+        if file.startswith("{}-{}".format(name, version)) and file.endswith(".rpm"):
             package_name = file
-        elif file.startswith("nginx-debuginfo-{}".format(version)) and file.endswith(".rpm"):
+        elif file.startswith("{}-debuginfo-{}".format(name, version)) and file.endswith(".rpm"):
             package_debuginfo_name = file
+        else:
+            print(file)
     return [ os.path.join(rpms_dir, config.PLATFORM_ARCH, package_name), os.path.join(rpms_dir, config.PLATFORM_ARCH, package_debuginfo_name) ]
 
 

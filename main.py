@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import traceback
 from src import config_parser
 from src import downloader
 from src import builder
@@ -18,11 +19,19 @@ def build(args):
     :return:
     """
     config = config_parser.parse_yaml(args.file)
+    revision = args.revision
+    
+    if revision == 0:
+        if config.get("nginx_revision") is None:
+            revision = 1
+        else:
+            revision  = int(config["nginx_revision"])
+            
     package_name = None
     if config["output_package"] == "deb":
-        package_name = build_deb(config, args.revision)
+        package_name = build_deb(config, revision)
     elif config["output_package"] == "rpm":
-        package_name = build_rpm(config, args.revision)
+        package_name = build_rpm(config, revision)
     else:
         logger.error("Output package type is not valid")
         sys.exit(1)
@@ -64,6 +73,8 @@ def build_rpm(config, revision):
     :param revision:
     :return:
     """
+    name = config["package_name"]
+    
     downloader.download_package_scripts_rpm()
     downloader.download_source_rpm(config["nginx_version"])
     downloaded_modules = downloader.download_modules(config["modules"])
@@ -74,7 +85,7 @@ def build_rpm(config, revision):
         downloaded_modules,
         revision,
         config['configure_params'],
-        patches
+        name, patches
     )
 
     return package_name
@@ -89,7 +100,7 @@ def parse_args():
     subparsers = parser.add_subparsers()
     parser_build = subparsers.add_parser('build', help='build deb package')
     parser_build.add_argument('-f', '--file', help='Yaml config file path', default='config.yaml')
-    parser_build.add_argument('-r', '--revision', help='Revision package', default='1')
+    parser_build.add_argument('-r', '--revision', help='Revision package (can overwrite nginx_revision config parameter', default=0)
     parser_build.set_defaults(func=build)
     return parser.parse_args()
 
@@ -101,6 +112,7 @@ def main():
             args.func(args)
         except Exception as e:
             logger.error(str(e))
+            logger.error(traceback.format_exc())
             sys.exit(1)
     else:
         logger.error('error: no arguments passed: use -h to help')
