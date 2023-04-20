@@ -118,7 +118,9 @@ def build_rpm(version, downloaded_modules, revision, configure_params, name, pat
     modules_dir = os.path.join(scripts_dir, "modules")
 
     prepare_rules_rpm(specs_dir, spec_file, downloaded_modules, modules_dir, revision, configure_params)
-    common_utils.execute_command("rpmbuild -bb {}".format(spec_file), specs_dir)
+    rc = common_utils.execute_command("rpmbuild -bb {}".format(spec_file), specs_dir)[1]
+    if rc != 0:
+        raise RuntimeError("exit with {}".format(rc))
     package_name = None
     package_debuginfo_name = None
     print(rpms_dir)
@@ -297,4 +299,6 @@ def apply_patch(modules_dir, source_dir, patches):
     for patch in patches:
         logger.info("Apply patch {}".format(patch))
         patch_command = "patch -p1 < {}".format(os.path.join(modules_dir, patch))
-        common_utils.execute_command(patch_command, source_dir)
+        rc = common_utils.execute_command(patch_command, source_dir)[1]
+        if rc != 0:
+            raise RuntimeError("exit with {}".format(rc))
